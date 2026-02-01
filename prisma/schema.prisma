@@ -1,0 +1,121 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String      @id @default(cuid())
+  email              String      @unique
+  password           String
+  name               String?
+  phone              String?
+  zerodhaUserId      String?
+  zerodhaAccessToken String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  trades             Trade[]
+  portfolio          Portfolio[]
+  alertRules         AlertRule[]
+  alerts             Alert[]
+  virtualBalance     Float       @default(100000)
+  virtualTrades      VirtualTrade[]
+  virtualPortfolio   VirtualPortfolio[]
+}
+
+model VirtualTrade {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  symbol            String
+  type              String    // "BUY" or "SELL"
+  quantity          Int
+  price             Float
+  totalValue        Float
+  createdAt         DateTime  @default(now())
+}
+
+model VirtualPortfolio {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  symbol       String
+  quantity     Int
+  avgBuyPrice  Float
+  updatedAt    DateTime @updatedAt
+}
+
+model Trade {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  symbol            String
+  buyDate           DateTime
+  sellDate          DateTime?
+  buyPrice          Float
+  sellPrice         Float?
+  quantity          Int
+  profitLoss        Float?
+  holdingPeriodDays Int?
+  createdAt         DateTime  @default(now())
+}
+
+model Portfolio {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  symbol       String
+  quantity     Int
+  avgBuyPrice  Float
+  currentPrice Float
+  unrealizedPL Float
+  lastUpdated  DateTime @updatedAt
+}
+
+model TechnicalAnalysis {
+  id               String    @id @default(cuid())
+  symbol           String    @unique
+  stage            Int
+  stageChangedDate DateTime?
+  greenFlags       Json
+  redFlags         Json
+  greenFlagCount   Int
+  redFlagCount     Int
+  fiftyTwoWeekHigh Float
+  fiftyTwoWeekLow  Float
+  ma50             Float
+  ma200            Float
+  rsi              Float
+  macd             Float
+  volumeSMA10      Float
+  volumeSMA20      Float
+  relativeStrength Float
+  analyzedAt       DateTime  @default(now())
+}
+
+model AlertRule {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  ruleName   String
+  ruleType   String
+  parameters Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  alerts     Alert[]
+}
+
+model Alert {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  alertRuleId String?
+  alertRule   AlertRule? @relation(fields: [alertRuleId], references: [id])
+  symbol      String
+  message     String
+  priority    String
+  isRead      Boolean    @default(false)
+  triggeredAt DateTime   @default(now())
+}
