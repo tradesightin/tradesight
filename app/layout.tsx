@@ -16,12 +16,17 @@ export const metadata: Metadata = {
   title: "Review & Rule",
   description: "Behavioral Trading Journal",
   manifest: "/manifest.json",
-  themeColor: "#0f172a",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Review & Rule",
   },
+};
+
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
 };
 
 import { SessionProvider } from "@/components/providers/session-provider";
