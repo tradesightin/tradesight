@@ -77,3 +77,40 @@ Each section guides you through setting up the external services required for "R
 4.  **Configure Config**:
     *   `EMAIL_USER`: Your full gmail address.
     *   `EMAIL_PASS`: The 16-char password (remove spaces).
+
+---
+
+## 5. Google Authentication Guide
+**Why:** To allow users to sign in with their Google accounts.
+
+1.  **Google Cloud Console**: Go to [console.cloud.google.com](https://console.cloud.google.com).
+2.  **Create Project**: Click the project dropdown (top left) -> "New Project" -> Name it `Tradesight` -> Create.
+3.  **OAuth Consent Screen**:
+    *   Go to **APIs & Services** -> **OAuth consent screen**.
+    *   Select **External** -> Create.
+    *   **App Information**:
+        *   App name: `Tradesight`.
+        *   User support email: Your email.
+        *   Developer contact information: Your email.
+    *   Click "Save and Continue" through Scopes (no special scopes needed for now).
+    *   Click "Save and Continue" through Test Users.
+    *   **Publish App**: Go back to OAuth consent screen dashboard and click "Publish App" to make it live (otherwise only test users can login).
+4.  **Create Credentials**:
+    *   Go to **Credentials** (left sidebar).
+    *   Click "**+ CREATE CREDENTIALS**" -> **OAuth client ID**.
+    *   **Application type**: Web application.
+    *   **Name**: `Tradesight Web Client`.
+    *   **Authorized JavaScript origins**:
+        *   `http://localhost:3000`
+        *   `https://tradesight.in`
+        *   `https://www.tradesight.in`
+    *   **Authorized redirect URIs**:
+        *   `http://localhost:3000/api/auth/callback/google`
+        *   `https://tradesight.in/api/auth/callback/google`
+        *   `https://www.tradesight.in/api/auth/callback/google`
+    *   Click **Create**.
+5.  **Get Configuration**:
+    *   Copy **Client ID** and **Client Secret**.
+    *   Add them to your `.env` file (and Vercel Environment Variables):
+        *   `GOOGLE_CLIENT_ID=...`
+        *   `GOOGLE_CLIENT_SECRET=...`
