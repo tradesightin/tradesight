@@ -16,16 +16,27 @@ export const dynamic = 'force-dynamic';
 
 export default async function PortfolioPage() {
     const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return <div>Please log in</div>;
+    const userId = session.user.id;
 
-    // Mock Portfolio Data for MVP (or fetch from DB)
-    // In real app: const portfolio = await db.portfolio.findMany(...)
-    const portfolioItems = [
-        { symbol: "RELIANCE", quantity: 20, avgPrice: 2400, ltp: 2550 },
-        { symbol: "TCS", quantity: 15, avgPrice: 3400, ltp: 3600 },
-        { symbol: "INFY", quantity: 50, avgPrice: 1600, ltp: 1450 },
-        { symbol: "PAYTM", quantity: 100, avgPrice: 850, ltp: 400 },
-        { symbol: "TATAMOTORS", quantity: 40, avgPrice: 600, ltp: 900 },
-    ];
+    // Fetch from DB
+    const portfolioItems = await db.portfolio.findMany({
+        where: { userId },
+        orderBy: { quantity: 'desc' }
+    });
+
+    if (portfolioItems.length === 0) {
+        return (
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between space-y-2">
+                    <h2 className="text-3xl font-bold tracking-tight">Portfolio Health</h2>
+                </div>
+                <div className="flex flex-col items-center justify-center p-10 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                    <p className="text-muted-foreground mb-4">No holdings found in your synced portfolio.</p>
+                </div>
+            </div>
+        )
+    }
 
     // Run analysis on each item parallelly
     // Note: Yahoo Finance requests might be rate limited. In prod, use a queue or cache.
@@ -39,7 +50,7 @@ export default async function PortfolioPage() {
                 ...item,
                 stage: 0,
                 ma200: 0,
-                currentPrice: item.ltp,
+                currentPrice: item.currentPrice,
                 maSlope: "FLAT",
                 insight: "Error analyzing",
                 greenFlags: [],

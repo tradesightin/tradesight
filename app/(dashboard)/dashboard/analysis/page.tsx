@@ -12,34 +12,33 @@ import { SimpleBarChart, DistributionPieChart } from "@/components/analysis/char
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trade, Portfolio } from "@prisma/client";
 
-// Mock Data Generator (since we might not have real data yet)
-const getMockTrades = (): Trade[] => {
-    return [
-        { id: "1", userId: "u1", symbol: "RELIANCE", buyDate: new Date("2023-01-01"), sellDate: new Date("2023-01-20"), buyPrice: 2400, sellPrice: 2500, quantity: 10, profitLoss: 1000, holdingPeriodDays: 19, createdAt: new Date() },
-        { id: "2", userId: "u1", symbol: "TCS", buyDate: new Date("2023-02-01"), sellDate: new Date("2023-02-10"), buyPrice: 3200, sellPrice: 3300, quantity: 5, profitLoss: 500, holdingPeriodDays: 9, createdAt: new Date() },
-        { id: "3", userId: "u1", symbol: "INFY", buyDate: new Date("2023-03-01"), sellDate: new Date("2023-04-15"), buyPrice: 1500, sellPrice: 1400, quantity: 20, profitLoss: -2000, holdingPeriodDays: 45, createdAt: new Date() },
-        { id: "4", userId: "u1", symbol: "HDFCBANK", buyDate: new Date("2023-04-01"), sellDate: new Date("2023-06-01"), buyPrice: 1600, sellPrice: 1500, quantity: 10, profitLoss: -1000, holdingPeriodDays: 61, createdAt: new Date() },
-        { id: "5", userId: "u1", symbol: "ITC", buyDate: new Date("2023-05-01"), sellDate: new Date("2023-05-15"), buyPrice: 400, sellPrice: 420, quantity: 100, profitLoss: 2000, holdingPeriodDays: 14, createdAt: new Date() },
-    ];
-};
-
-const getMockPortfolio = (): Portfolio[] => {
-    return [
-        { id: "p1", userId: "u1", symbol: "RELIANCE", quantity: 20, avgBuyPrice: 2500, currentPrice: 2600, unrealizedPL: 2000, lastUpdated: new Date() },
-        { id: "p2", userId: "u1", symbol: "TCS", quantity: 10, avgBuyPrice: 3400, currentPrice: 3500, unrealizedPL: 1000, lastUpdated: new Date() },
-        { id: "p3", userId: "u1", symbol: "HDFCBANK", quantity: 50, avgBuyPrice: 1600, currentPrice: 1550, unrealizedPL: -2500, lastUpdated: new Date() },
-    ];
-};
+// Mock Data Generator (since we might not have real data yet) - REMOVED
+// const getMockTrades = ...
+// const getMockPortfolio = ...
 
 export default async function AnalysisPage() {
     const session = await getServerSession(authOptions);
 
-    // In production, fetch from DB
-    // const trades = await db.trade.findMany({ where: { userId: session?.user?.id } });
+    if (!session?.user?.id) return <div>Please log in</div>;
+    const userId = session.user.id;
 
-    // Using mock data for MVP demonstration
-    const trades = getMockTrades();
-    const portfolio = getMockPortfolio();
+    // Fetch from DB
+    const trades = await db.trade.findMany({ where: { userId }, orderBy: { buyDate: 'desc' } });
+    const portfolio = await db.portfolio.findMany({ where: { userId } });
+
+    // Check if data exists
+    if (trades.length === 0 && portfolio.length === 0) {
+        return (
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between space-y-2">
+                    <h2 className="text-3xl font-bold tracking-tight">Behavioral Analysis</h2>
+                </div>
+                <div className="flex flex-col items-center justify-center p-10 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                    <p className="text-muted-foreground mb-4">No trading data found. Connect your Zerodha account or wait for data sync.</p>
+                </div>
+            </div>
+        )
+    }
 
     const holdingPeriod = analyzeHoldingPeriod(trades);
     const profitPattern = analyzeProfitPatterns(trades);

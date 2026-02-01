@@ -10,6 +10,7 @@ import { StageBadge } from "@/components/analysis/stage-badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Activity, TrendingUp, AlertTriangle, PlayCircle } from "lucide-react";
+import { ZerodhaConnect } from "@/components/dashboard/zerodha-connect";
 
 export const dynamic = 'force-dynamic';
 
@@ -19,29 +20,82 @@ export default async function DashboardPage() {
     if (!session?.user?.id) return <div>Please log in</div>;
     const userId = session.user.id;
 
-    // 1. Fetch Summary Data
+    // 1. Fetch User & Check Connection
     const user = await db.user.findUnique({ where: { id: userId } });
 
-    // 2. Fetch Portfolio (Mocked for now as per previous pages)
-    const portfolioItems = [
-        { symbol: "RELIANCE", quantity: 20, avgPrice: 2400, ltp: 2550 },
-        { symbol: "TCS", quantity: 15, avgPrice: 3400, ltp: 3600 },
-        { symbol: "TATAMOTORS", quantity: 40, avgPrice: 600, ltp: 900 },
-    ];
-    const trades = [
-        { id: "1", userId: "u1", symbol: "RELIANCE", buyDate: new Date("2023-01-01"), sellDate: new Date("2023-01-20"), buyPrice: 2400, sellPrice: 2500, quantity: 10, profitLoss: 1000, holdingPeriodDays: 19, createdAt: new Date() },
-    ]; // re-using mock trades for behavioral
+    // IF NOT CONNECTED: Show Connect UI
+    if (!user?.zerodhaUserId) {
+        return (
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between space-y-2">
+                    <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+                </div>
+                <div className="py-10">
+                    <ZerodhaConnect />
+                </div>
+            </div>
+        );
+    }
 
-    // 3. Run Analysis (Limit to top 3 holdings for dashboard speed)
-    const analysisResults = await Promise.all(portfolioItems.slice(0, 3).map(async (item) => {
+    // 2. Fetch Real Data
+    const portfolioItems = await db.portfolio.findMany({
+        where: { userId },
+        orderBy: { unrealizedPL: 'desc' } // Biggest winners/losers first
+    });
+
+    const tradeHistory = await db.trade.findMany({
+        where: { userId },
+        orderBy: { buyDate: 'desc' },
+        take: 100 // Limit for performance
+    });
+
+    // 3. Handle Empty Data State (Connected but no sync yet)
+    if (portfolioItems.length === 0 && tradeHistory.length === 0) {
+        return (
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between space-y-2">
+                    <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Syncing Data...</CardTitle>
+                        <CardDescription>
+                            Your account is connected! We are syncing your trades. Please check back in a few minutes, or try syncing manually in Settings.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        )
+    }
+
+    // 4. Run Analysis
+    // Map DB portfolio to analysis format
+    const topHoldings = portfolioItems.slice(0, 4);
+
+    const analysisResults = await Promise.all(topHoldings.map(async (item) => {
         try {
             const stage = await calculateStage(item.symbol);
             const flags = await calculateAllFlags(item.symbol);
-            return { ...item, ...stage, ...flags };
-        } catch { return null; }
+
+            // Calculate Green/Red count
+            const greenCount = (flags.greenFlags as any[])?.length || 0;
+            const redCount = (flags.redFlags as any[])?.length || 0;
+            const summary = greenCount > redCount ? "Bullish" : (redCount > greenCount ? "Bearish" : "Neutral");
+
+            return {
+                symbol: item.symbol,
+                summary,
+                stage: stage.stage,
+                greenCount,
+                redCount
+            };
+        } catch (e) {
+            console.error(`Analysis failed for ${item.symbol}`, e);
+            return null;
+        }
     }));
 
-    const behavioral = analyzeHoldingPeriod(trades as any[]);
+    const behavioral = analyzeHoldingPeriod(tradeHistory);
     const stage2Count = analysisResults.filter(a => a?.stage === 2).length;
     const bullishCount = analysisResults.filter(a => a?.summary === "Bullish").length;
 
@@ -61,7 +115,7 @@ export default async function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Portfolio Status"
-                    value="3 Active"
+                    value={`${analysisResults.filter(x => x).length} Analyzed`}
                     description={`${stage2Count} in Stage 2`}
                     trend="up"
                 />
@@ -126,7 +180,7 @@ export default async function DashboardPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Link href="/dashboard/alerts" className="flex items-center p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition">
+                        <Link href="/dashboard/alert-rules" className="flex items-center p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition">
                             <AlertTriangle className="h-5 w-5 mr-3 text-amber-500" />
                             <div>
                                 <div className="font-medium">Check Alerts</div>
