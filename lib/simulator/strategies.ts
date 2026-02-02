@@ -1,6 +1,6 @@
 import { Trade } from "@prisma/client";
 import YahooFinance from "yahoo-finance2";
-const yahooFinance = new YahooFinance();
+const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 
 export interface SimulationResult {
     originalPL: number;
@@ -38,7 +38,7 @@ export async function simulateStopLoss(
         // Check if price hit stop loss during holding period
         try {
             const querySymbol = trade.symbol.endsWith(".NS") ? trade.symbol : `${trade.symbol}.NS`;
-            const historicalData = await yahooFinance.historical(querySymbol, {
+            const chartResult = await yahooFinance.chart(querySymbol, {
                 period1: trade.buyDate,
                 period2: trade.sellDate!,
                 interval: "1d",
@@ -47,7 +47,7 @@ export async function simulateStopLoss(
             let hitStop = false;
             let stopPL = originalPL;
 
-            for (const day of (historicalData as any[])) {
+            for (const day of (chartResult?.quotes || []) as any[]) {
                 if (day.low <= stopPrice) {
                     // Stop loss triggered
                     stopPL = ((stopPrice - trade.buyPrice) / trade.buyPrice) * 100;
@@ -115,7 +115,7 @@ export async function simulateTrailingStop(
 
         try {
             const querySymbol = trade.symbol.endsWith(".NS") ? trade.symbol : `${trade.symbol}.NS`;
-            const historicalData = await yahooFinance.historical(querySymbol, {
+            const chartResult = await yahooFinance.chart(querySymbol, {
                 period1: trade.buyDate,
                 period2: trade.sellDate!,
                 interval: "1d",
@@ -125,7 +125,7 @@ export async function simulateTrailingStop(
             let hitTrailing = false;
             let trailingPL = originalPL;
 
-            for (const day of (historicalData as any[])) {
+            for (const day of (chartResult?.quotes || []) as any[]) {
                 if (day.high > highestPrice) highestPrice = day.high;
                 const trailingStop = highestPrice * (1 - trailingPercent / 100);
 
