@@ -203,6 +203,8 @@ export default async function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ImportTrades />
         </div>
     );
 }

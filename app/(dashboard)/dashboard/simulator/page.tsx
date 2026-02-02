@@ -17,6 +17,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { revalidatePath } from "next/cache";
 import { FlaskConical, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
+import { ImportTrades } from "@/components/dashboard/import-trades";
 
 export const dynamic = 'force-dynamic';
 
@@ -87,10 +88,11 @@ export default async function SimulatorPage() {
                             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                                 <FlaskConical className="h-16 w-16 text-muted-foreground/30 mb-4" />
                                 <h3 className="text-lg font-semibold mb-2">No completed trades found</h3>
-                                <p className="text-sm text-muted-foreground max-w-md">
+                                <p className="text-sm text-muted-foreground max-w-md mb-6">
                                     The What-If simulator tests different strategies on your past trades.
-                                    Connect Zerodha and sync your trade history to use this feature.
+                                    Import your trade history from Zerodha Console to use this feature.
                                 </p>
+                                <ImportTrades />
                             </CardContent>
                         </Card>
                     ) : (
