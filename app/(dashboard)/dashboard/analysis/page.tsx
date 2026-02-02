@@ -10,7 +10,6 @@ import {
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SimpleBarChart, DistributionPieChart } from "@/components/analysis/charts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trade, Portfolio } from "@prisma/client";
 
 // Mock Data Generator (since we might not have real data yet) - REMOVED
 // const getMockTrades = ...

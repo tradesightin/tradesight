@@ -72,7 +72,7 @@ export default async function DashboardPage() {
     // Map DB portfolio to analysis format
     const topHoldings = portfolioItems.slice(0, 4);
 
-    const analysisResults = await Promise.all(topHoldings.map(async (item) => {
+    const analysisResults = await Promise.all(topHoldings.map(async (item: any) => {
         try {
             const stage = await calculateStage(item.symbol);
             const flags = await calculateAllFlags(item.symbol);
@@ -96,8 +96,8 @@ export default async function DashboardPage() {
     }));
 
     const behavioral = analyzeHoldingPeriod(tradeHistory);
-    const stage2Count = analysisResults.filter(a => a?.stage === 2).length;
-    const bullishCount = analysisResults.filter(a => a?.summary === "Bullish").length;
+    const stage2Count = analysisResults.filter((a: any) => a?.stage === 2).length;
+    const bullishCount = analysisResults.filter((a: any) => a?.summary === "Bullish").length;
 
     return (
         <div className="flex-1 space-y-4">
@@ -115,14 +115,14 @@ export default async function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     title="Portfolio Status"
-                    value={`${analysisResults.filter(x => x).length} Analyzed`}
+                    value={`${analysisResults.filter((x: any) => x).length} Analyzed`}
                     description={`${stage2Count} in Stage 2`}
                     trend="up"
                 />
                 <StatCard
                     title="Market Pulse"
                     value={bullishCount > 0 ? "Bullish" : "Neutral"}
-                    description={`${bullishCount} Strong Buy signals`}
+                    description={`${bullishCount} bullish signals detected`}
                     trend={bullishCount > 0 ? "up" : "neutral"}
                 />
                 <StatCard
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-8">
-                            {analysisResults.map((item, i) => item ? (
+                            {analysisResults.map((item: any, i: number) => item ? (
                                 <div key={i} className="flex items-center">
                                     <div className="space-y-1">
                                         <p className="text-sm font-medium leading-none">{item.symbol}</p>
@@ -180,7 +180,7 @@ export default async function DashboardPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Link href="/dashboard/alert-rules" className="flex items-center p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition">
+                        <Link href="/dashboard/alerts" className="flex items-center p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition">
                             <AlertTriangle className="h-5 w-5 mr-3 text-amber-500" />
                             <div>
                                 <div className="font-medium">Check Alerts</div>

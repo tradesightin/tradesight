@@ -40,7 +40,7 @@ export default async function PortfolioPage() {
 
     // Run analysis on each item parallelly
     // Note: Yahoo Finance requests might be rate limited. In prod, use a queue or cache.
-    const analysisPromises = portfolioItems.map(async (item) => {
+    const analysisPromises = portfolioItems.map(async (item: any) => {
         try {
             const stageData = await calculateStage(item.symbol);
             const flagData = await calculateAllFlags(item.symbol);

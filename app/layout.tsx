@@ -1,20 +1,10 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { SessionProvider } from "@/components/providers/session-provider";
 
 export const metadata: Metadata = {
   title: "Review & Rule",
-  description: "Behavioral Trading Journal",
+  description: "Behavioral Trading Journal for Indian Investors",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -23,13 +13,9 @@ export const metadata: Metadata = {
   },
 };
 
-import type { Viewport } from "next";
-
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#2563eb",
 };
-
-import { SessionProvider } from "@/components/providers/session-provider";
 
 export default function RootLayout({
   children,
@@ -38,9 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="font-sans antialiased">
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

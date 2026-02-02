@@ -100,10 +100,10 @@ export async function calculateStage(symbol: string): Promise<StageResult> {
 
         let insight = "";
         switch (stage) {
-            case 1: insight = "Basing Phase. Watch for breakout."; break;
-            case 2: insight = "Advancing Phase. Best time to hold/buy dips."; break;
-            case 3: insight = "Topping Phase. Volatile. Tighten stops."; break;
-            case 4: insight = "Declining Phase. Avoid or Sell."; break;
+            case 1: insight = "Basing Phase. Price consolidating near moving average."; break;
+            case 2: insight = "Advancing Phase. Price above rising 200-day MA."; break;
+            case 3: insight = "Topping Phase. Increased volatility detected. Review your rules."; break;
+            case 4: insight = "Declining Phase. Price below falling 200-day MA. Review your position."; break;
         }
 
         return {
