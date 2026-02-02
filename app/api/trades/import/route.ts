@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 // Helper: Parse CSV Line handling quoted values (e.g., "Reliance Industries, Ltd")
 function parseCSVLine(line: string): string[] {
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
         // Validate Columns
         const firstRow = rows[0];
         const hasSymbol = "tradingsymbol" in firstRow || "symbol" in firstRow;
-        const hasTradeType = "trade_type" in firstRow || "transaction_type" in firstRow; // Zerodha sometimes uses transaction_type
+        const hasTradeType = "trade_type" in firstRow || "transaction_type" in firstRow; 
         
         if (!hasSymbol || !hasTradeType) {
             return NextResponse.json({ 
@@ -73,7 +74,6 @@ export async function POST(req: NextRequest) {
         }
 
         // Sort CSV chronologically
-        // FIX: Explicitly typed 'a' and 'b' as 'any' to satisfy TypeScript compiler
         rows.sort((a: any, b: any) => {
             const dA = new Date(a.trade_date || a.order_execution_time);
             const dB = new Date(b.trade_date || b.order_execution_time);
@@ -93,7 +93,6 @@ export async function POST(req: NextRequest) {
         const openTradesMap: Record<string, any[]> = {};
         
         // 1. Populate map with existing DB trades that are OPEN
-        // FIX: Explicitly typed 't' as 'any' to satisfy TypeScript compiler
         existingTrades.forEach((t: any) => {
             if (!t.sellDate) {
                 if (!openTradesMap[t.symbol]) openTradesMap[t.symbol] = [];
@@ -101,8 +100,8 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // Operations to perform
-        const ops = [];
+        // Operations to perform - typed STRICTLY as PrismaPromise array
+        const ops: Prisma.PrismaPromise<any>[] = [];
         let savedCount = 0;
         let skippedCount = 0;
 
@@ -111,7 +110,7 @@ export async function POST(req: NextRequest) {
             const symbol = row.tradingsymbol || row.symbol;
             const rawSide = row.trade_type || row.transaction_type || "";
             const side = rawSide.toUpperCase();
-            const quantity = Math.abs(parseInt(row.quantity)); // Ensure positive
+            const quantity = Math.abs(parseInt(row.quantity));
             const price = parseFloat(row.price);
             const dateStr = row.trade_date || row.order_execution_time;
 
@@ -134,8 +133,7 @@ export async function POST(req: NextRequest) {
             }
 
             if (side === "BUY" || side === "B") {
-                // Check Duplicates (In Memory Check against DB records)
-                // FIX: Explicitly typed 't' as 'any' inside 'some' callback
+                // Check Duplicates
                 const isDuplicate = existingTrades.some((t: any) => 
                     t.symbol === symbol && 
                     t.buyPrice === price && 
@@ -145,7 +143,7 @@ export async function POST(req: NextRequest) {
 
                 if (!isDuplicate) {
                     // Create New Trade Operation
-                    const newTradeId = `new_${Date.now()}_${Math.random()}`; // Temp ID for memory tracking
+                    const newTradeId = `new_${Date.now()}_${Math.random()}`; 
                     const newTrade = {
                         id: newTradeId,
                         userId,
@@ -156,10 +154,9 @@ export async function POST(req: NextRequest) {
                         sellDate: null,
                         sellPrice: null,
                         profitLoss: null,
-                        isDbRecord: false // It's a new one
+                        isDbRecord: false 
                     };
 
-                    // Add to Ops
                     ops.push(db.trade.create({
                         data: {
                             userId,
@@ -170,7 +167,6 @@ export async function POST(req: NextRequest) {
                         }
                     }));
                     
-                    // Add to Memory State (so future sells in this CSV can find it)
                     if (!openTradesMap[symbol]) openTradesMap[symbol] = [];
                     openTradesMap[symbol].push(newTrade);
                     
@@ -180,26 +176,21 @@ export async function POST(req: NextRequest) {
                 }
 
             } else if (side === "SELL" || side === "S") {
-                // FIFO Logic
                 let quantityToSell = quantity;
                 const openPositions = openTradesMap[symbol] || [];
 
-                // Iterate through open positions to fulfill sell quantity
                 while (quantityToSell > 0 && openPositions.length > 0) {
                     const match = openPositions[0]; // Oldest first
                     
-                    // Calculate holding period
                     const holdingDays = Math.floor(
                         (tradeDate.getTime() - new Date(match.buyDate).getTime()) / (1000 * 60 * 60 * 24)
                     );
 
                     if (match.quantity <= quantityToSell) {
-                        // FULL MATCH: We consume this entire buy trade
-                        // Calculate PL
+                        // FULL MATCH
                         const pl = (price - match.buyPrice) * match.quantity;
 
                         if (match.isDbRecord) {
-                            // Update existing DB record
                             ops.push(db.trade.update({
                                 where: { id: match.id },
                                 data: {
@@ -211,26 +202,24 @@ export async function POST(req: NextRequest) {
                             }));
                         } 
 
-                        // Remove from memory
                         openPositions.shift();
                         quantityToSell -= match.quantity;
                         savedCount++;
 
                     } else {
-                        // PARTIAL MATCH: We consume PART of this buy trade
-                        
+                        // PARTIAL MATCH
                         const soldQty = quantityToSell;
                         const remainingQty = match.quantity - soldQty;
                         const pl = (price - match.buyPrice) * soldQty;
 
                         if (match.isDbRecord) {
-                            // OP 1: Reduce quantity of original trade (Keep it Open)
+                            // OP 1: Reduce quantity of original trade
                             ops.push(db.trade.update({
                                 where: { id: match.id },
                                 data: { quantity: remainingQty }
                             }));
 
-                            // OP 2: Create NEW Closed Trade for the sold portion
+                            // OP 2: Create NEW Closed Trade for sold portion
                             ops.push(db.trade.create({
                                 data: {
                                     userId,
@@ -246,9 +235,8 @@ export async function POST(req: NextRequest) {
                             }));
                         }
                         
-                        // Update Memory State
                         match.quantity = remainingQty;
-                        quantityToSell = 0; // Done
+                        quantityToSell = 0;
                         savedCount++;
                     }
                 }
@@ -256,7 +244,6 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Execute Operations in Transaction
-        // We slice to avoid hitting transaction limits if huge
         const BATCH_SIZE = 50;
         for (let i = 0; i < ops.length; i += BATCH_SIZE) {
             const batch = ops.slice(i, i + BATCH_SIZE);
