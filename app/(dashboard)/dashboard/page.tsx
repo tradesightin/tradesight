@@ -12,6 +12,7 @@ import Link from "next/link";
 import { ArrowRight, Activity, TrendingUp, AlertTriangle, PlayCircle } from "lucide-react";
 import { ZerodhaConnect } from "@/components/dashboard/zerodha-connect";
 import { SyncPortfolio } from "@/components/dashboard/sync-portfolio";
+import { ImportTrades } from "@/components/dashboard/import-trades";
 
 export const dynamic = 'force-dynamic';
 
@@ -53,12 +54,13 @@ export default async function DashboardPage() {
     // 3. Handle Empty Data State (Connected but no sync yet)
     if (portfolioItems.length === 0 && tradeHistory.length === 0) {
         return (
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-6 p-8 pt-6">
                 <div className="flex items-center justify-between space-y-2">
                     <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                 </div>
-                <div className="py-10 max-w-lg mx-auto">
+                <div className="grid gap-6 max-w-2xl mx-auto">
                     <SyncPortfolio />
+                    <ImportTrades />
                 </div>
             </div>
         )

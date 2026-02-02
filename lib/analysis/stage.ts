@@ -1,5 +1,5 @@
 import YahooFinance from "yahoo-finance2";
-const yahooFinance = new YahooFinance();
+const yahooFinance = new YahooFinance({ suppressNotices: ['ripHistorical'] });
 import { SMA } from "technicalindicators";
 
 export interface StageResult {
@@ -22,17 +22,18 @@ export async function calculateStage(symbol: string): Promise<StageResult> {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 400); // 400 days ago to be safe
 
-        const result = await yahooFinance.historical(querySymbol, {
+        const result = await yahooFinance.chart(querySymbol, {
             period1: startDate,
             period2: endDate,
             interval: "1d",
         });
 
-        if (!result || (result as any[]).length < 205) {
+        const quotes = result?.quotes;
+        if (!quotes || quotes.length < 205) {
             throw new Error("Insufficient data for stage analysis (need > 200 days)");
         }
 
-        const closes = (result as any[]).map((r: any) => r.close);
+        const closes = quotes.map((r: any) => r.close).filter((v: any) => v != null);
 
         // 2. Calculate 200-day Moving Average
         // technicalindicators SMA input req: period, values

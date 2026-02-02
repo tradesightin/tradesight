@@ -26,14 +26,15 @@ export async function checkAlerts() {
             const querySymbol = symbol.endsWith(".NS") ? symbol : `${symbol}.NS`;
 
             // Fetch 200 days for indicators
-            const result = await yahooFinance.historical(querySymbol, {
+            const chartResult = await yahooFinance.chart(querySymbol, {
                 period1: new Date(Date.now() - 300 * 24 * 60 * 60 * 1000),
                 period2: new Date(),
                 interval: "1d"
             });
 
-            if (!result || (result as any[]).length < 50) continue;
-            const closes = (result as any[]).map((r: any) => r.close);
+            const quotes = chartResult?.quotes;
+            if (!quotes || quotes.length < 50) continue;
+            const closes = quotes.map((r: any) => r.close).filter((v: any) => v != null);
             const currentPrice = closes[closes.length - 1];
 
             let specificValue = 0;
