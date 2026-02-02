@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Activity, TrendingUp, AlertTriangle, PlayCircle } from "lucide-react";
 import { ZerodhaConnect } from "@/components/dashboard/zerodha-connect";
+import { SyncPortfolio } from "@/components/dashboard/sync-portfolio";
 
 export const dynamic = 'force-dynamic';
 
@@ -52,18 +53,13 @@ export default async function DashboardPage() {
     // 3. Handle Empty Data State (Connected but no sync yet)
     if (portfolioItems.length === 0 && tradeHistory.length === 0) {
         return (
-            <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex-1 space-y-4">
                 <div className="flex items-center justify-between space-y-2">
                     <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                 </div>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Syncing Data...</CardTitle>
-                        <CardDescription>
-                            Your account is connected! We are syncing your trades. Please check back in a few minutes, or try syncing manually in Settings.
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
+                <div className="py-10 max-w-lg mx-auto">
+                    <SyncPortfolio />
+                </div>
             </div>
         )
     }
