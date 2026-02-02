@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Badge } from "@/components/ui/badge";
+import { SyncPortfolio } from "@/components/dashboard/sync-portfolio";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Force dynamic because we might fetch live data/random mock data
@@ -32,7 +33,8 @@ export default async function PortfolioPage() {
                     <h2 className="text-3xl font-bold tracking-tight">Portfolio Health</h2>
                 </div>
                 <div className="flex flex-col items-center justify-center p-10 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
-                    <p className="text-muted-foreground mb-4">No holdings found in your synced portfolio.</p>
+                    <p className="text-muted-foreground mb-4">No holdings found. Sync your portfolio to get started.</p>
+                    <SyncPortfolio />
                 </div>
             </div>
         )

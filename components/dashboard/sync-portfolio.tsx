@@ -6,7 +6,7 @@ import { RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function SyncPortfolio() {
+export function SyncPortfolio({ compact = false }: { compact?: boolean }) {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
     const [message, setMessage] = useState("");
@@ -37,6 +37,15 @@ export function SyncPortfolio() {
             setLoading(false);
         }
     };
+
+    if (compact) {
+        return (
+            <Button variant="outline" size="sm" onClick={handleSync} disabled={loading} className="gap-2">
+                <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                {loading ? "Syncing..." : "Re-sync"}
+            </Button>
+        );
+    }
 
     return (
         <Card>
