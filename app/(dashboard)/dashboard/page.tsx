@@ -100,6 +100,7 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                 <div className="flex items-center space-x-2">
+                    <SyncPortfolio compact />
                     <Button asChild>
                         <Link href="/dashboard/simulator">
                             <PlayCircle className="mr-2 h-4 w-4" /> Open Simulator
