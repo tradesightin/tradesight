@@ -24,25 +24,6 @@ function parseCSVLine(line: string): string[] {
     return result.map(c => c.replace(/^"|"$/g, '')); // Remove surrounding quotes
 }
 
-// Helper: Parse 'DD-MM-YYYY' or 'YYYY-MM-DD' safely
-function parseDate(dateStr: string): Date | null {
-    if (!dateStr) return null;
-    
-    // Handle specific Zerodha format (often YYYY-MM-DD)
-    const date = new Date(dateStr);
-    if (!isNaN(date.getTime())) return date;
-    
-    // Fallback for DD-MM-YYYY or DD/MM/YYYY
-    const parts = dateStr.split(/[-/]/);
-    if (parts.length === 3) {
-        // Assume Day-Month-Year if first part is small? 
-        // Actually Zerodha usually gives YYYY-MM-DD. 
-        // Let's try basic ISO parsing first.
-        return null; 
-    }
-    return null;
-}
-
 export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -92,7 +73,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Sort CSV chronologically
-        rows.sort((a, b) => {
+        // FIX: Explicitly typed 'a' and 'b' as 'any' to satisfy TypeScript compiler
+        rows.sort((a: any, b: any) => {
             const dA = new Date(a.trade_date || a.order_execution_time);
             const dB = new Date(b.trade_date || b.order_execution_time);
             return dA.getTime() - dB.getTime();
@@ -101,8 +83,6 @@ export async function POST(req: NextRequest) {
         const userId = session.user.id;
         
         // --- OPTIMIZATION: Fetch existing trades once ---
-        // We fetch all trades for the user to perform FIFO in memory
-        // fetching only necessary fields to save memory
         const existingTrades = await db.trade.findMany({
             where: { userId },
             orderBy: { buyDate: 'asc' }
@@ -113,7 +93,8 @@ export async function POST(req: NextRequest) {
         const openTradesMap: Record<string, any[]> = {};
         
         // 1. Populate map with existing DB trades that are OPEN
-        existingTrades.forEach(t => {
+        // FIX: Explicitly typed 't' as 'any' to satisfy TypeScript compiler
+        existingTrades.forEach((t: any) => {
             if (!t.sellDate) {
                 if (!openTradesMap[t.symbol]) openTradesMap[t.symbol] = [];
                 openTradesMap[t.symbol].push({ ...t, isDbRecord: true });
@@ -154,8 +135,8 @@ export async function POST(req: NextRequest) {
 
             if (side === "BUY" || side === "B") {
                 // Check Duplicates (In Memory Check against DB records)
-                // We define duplicate as: Same Symbol, Same Date, Same Price, Same Quantity exists in DB
-                const isDuplicate = existingTrades.some(t => 
+                // FIX: Explicitly typed 't' as 'any' inside 'some' callback
+                const isDuplicate = existingTrades.some((t: any) => 
                     t.symbol === symbol && 
                     t.buyPrice === price && 
                     t.quantity === quantity &&
@@ -228,19 +209,7 @@ export async function POST(req: NextRequest) {
                                     holdingPeriodDays: holdingDays
                                 }
                             }));
-                        } else {
-                            // It's a new trade we just created in this loop. 
-                            // Since we can't update a record we haven't inserted yet in a single transaction easily without nested creates,
-                            // Ideally we would merge them, but for simplicity we rely on the fact that `ops` are executed in order? 
-                            // Prisma transaction doesn't share state between ops.
-                            // FIX: If it's a NEW trade, we can't 'update' it in the same transaction easily. 
-                            // However, since we are Bulk Importing, it's rare to Buy and Sell same day in one CSV unless intraday.
-                            // If Intraday, we usually skip or handle differently.
-                            // fallback: we skip closing "new" trades in the same batch to avoid complexity, or we assume they remain open.
-                            // OR: We just insert it as a Closed Trade initially?
-                            // Let's Skip closing in-memory created trades for safety/simplicity to prevent crash.
-                            // User can re-run import or we handle complex case later.
-                        }
+                        } 
 
                         // Remove from memory
                         openPositions.shift();
@@ -249,8 +218,6 @@ export async function POST(req: NextRequest) {
 
                     } else {
                         // PARTIAL MATCH: We consume PART of this buy trade
-                        // 1. We must SPLIT the trade.
-                        //    Trade A (100 qty) -> Becomes Trade A (remaining) + Trade B (sold)
                         
                         const soldQty = quantityToSell;
                         const remainingQty = match.quantity - soldQty;
@@ -307,7 +274,6 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         console.error("Trade import error:", error);
-        // Important: Return JSON even on error so client doesn't choke
         return NextResponse.json(
             { message: error.message || "An internal server error occurred" }, 
             { status: 500 }
