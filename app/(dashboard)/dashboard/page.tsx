@@ -203,6 +203,10 @@ export default async function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {tradeHistory.length === 0 && (
+                <ImportTrades />
+            )}
         </div>
     );
 }
