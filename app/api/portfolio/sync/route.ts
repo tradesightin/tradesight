@@ -28,7 +28,7 @@ export async function POST() {
         // Update Portfolio in DB
         // Simple implementation: Delete old, insert new (for full sync)
         // In production, you might want to upsert to preserve history if tracking day-wise
-        await db.$transaction(async (tx) => {
+        await db.$transaction(async (tx: any) => {
             await tx.portfolio.deleteMany({
                 where: { userId: user.id },
             });
