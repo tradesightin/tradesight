@@ -11,6 +11,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { SimpleBarChart, DistributionPieChart } from "@/components/analysis/charts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SyncPortfolio } from "@/components/dashboard/sync-portfolio";
+import { ImportTrades } from "@/components/dashboard/import-trades";
 
 // Mock Data Generator (since we might not have real data yet) - REMOVED
 // const getMockTrades = ...
@@ -33,9 +34,12 @@ export default async function AnalysisPage() {
                 <div className="flex items-center justify-between space-y-2">
                     <h2 className="text-3xl font-bold tracking-tight">Behavioral Analysis</h2>
                 </div>
-                <div className="flex flex-col items-center justify-center p-10 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
-                    <p className="text-muted-foreground mb-4">No trading data found. Sync your portfolio to get started.</p>
-                    <SyncPortfolio />
+                <div className="space-y-6 max-w-2xl mx-auto">
+                    <div className="flex flex-col items-center justify-center p-10 border rounded-lg bg-slate-50 dark:bg-slate-900/50">
+                        <p className="text-muted-foreground mb-4">No trading data found. Sync your portfolio or import your trade history to get started.</p>
+                        <SyncPortfolio />
+                    </div>
+                    <ImportTrades />
                 </div>
             </div>
         )
