@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { handleZerodhaCallback, encryptToken } from "@/lib/zerodha";
 import { db } from "@/lib/db";
 
@@ -8,26 +10,32 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const requestToken = searchParams.get("request_token");
     const status = searchParams.get("status");
-    const userId = searchParams.get("state");
 
-    // Log everything Zerodha sends back for debugging
+    // Get userId from session instead of state param (Zerodha doesn't always pass state back)
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id || searchParams.get("state");
+
     console.log("Zerodha callback received:", {
         status,
         requestToken: requestToken ? "present" : "missing",
         userId: userId ? "present" : "missing",
-        allParams: Object.fromEntries(searchParams.entries()),
+        fromSession: !!session?.user?.id,
+        fromState: !!searchParams.get("state"),
     });
 
     const baseUrl = process.env.NEXTAUTH_URL || req.nextUrl.origin;
 
-    if (status !== "success" || !requestToken || !userId) {
-        console.error("Zerodha callback failed:", {
-            statusReceived: status,
-            hasRequestToken: !!requestToken,
-            hasUserId: !!userId,
-        });
+    if (status !== "success" || !requestToken) {
+        console.error("Zerodha callback failed: status or token missing");
         return NextResponse.redirect(
             new URL(`/dashboard?error=zerodha_failed&reason=${status || "unknown"}`, baseUrl)
+        );
+    }
+
+    if (!userId) {
+        console.error("Zerodha callback failed: no user session found");
+        return NextResponse.redirect(
+            new URL("/dashboard?error=zerodha_failed&reason=no_session", baseUrl)
         );
     }
 
