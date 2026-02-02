@@ -26,7 +26,7 @@ export async function checkAlerts() {
             const querySymbol = symbol.endsWith(".NS") ? symbol : `${symbol}.NS`;
 
             // Fetch 200 days for indicators
-            const chartResult = await yahooFinance.chart(querySymbol, {
+            const chartResult: any = await yahooFinance.chart(querySymbol, {
                 period1: new Date(Date.now() - 300 * 24 * 60 * 60 * 1000),
                 period2: new Date(),
                 interval: "1d"
