@@ -134,7 +134,7 @@ export async function findEarlyExits(trades: Trade[]): Promise<EarlyExitAnalysis
             // Don't check if 30 days haven't passed
             if (dateAfter30d > new Date()) continue;
 
-            const chartResult = await yahooFinance.chart(trade.symbol + ".NS", {
+            const chartResult: any = await yahooFinance.chart(trade.symbol + ".NS", {
                 period1: dateAfter30d,
                 period2: addDays(dateAfter30d, 5),
                 interval: "1d",
