@@ -21,7 +21,6 @@ declare module '@prisma/client' {
         type UserWhereInput = any;
         type AlertRuleCreateInput = any;
         type AlertCreateInput = any;
-        [key: string]: any;
     }
 
     export type Trade = {
