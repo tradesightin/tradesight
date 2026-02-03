@@ -11,6 +11,19 @@ declare module '@prisma/client' {
         $disconnect(): Promise<void>;
     }
 
+    export namespace Prisma {
+        type TradeCreateInput = any;
+        type TradeUpdateInput = any;
+        type TradeWhereInput = any;
+        type TradeWhereUniqueInput = any;
+        type PortfolioCreateInput = any;
+        type PortfolioWhereInput = any;
+        type UserWhereInput = any;
+        type AlertRuleCreateInput = any;
+        type AlertCreateInput = any;
+        [key: string]: any;
+    }
+
     export type Trade = {
         id: string;
         userId: string;
